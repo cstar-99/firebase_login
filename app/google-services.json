@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "625704688756",
+    "project_id": "loginapp-b6796",
+    "storage_bucket": "loginapp-b6796.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:625704688756:android:0e8befb29838f81b174521",
+        "android_client_info": {
+          "package_name": "com.firetest.loginappfire"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNEFZL_YD1KmICNg7RN73hNV4gGnnx228"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

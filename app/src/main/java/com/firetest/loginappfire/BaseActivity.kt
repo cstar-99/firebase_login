@@ -8,7 +8,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
 open class BaseActivity : AppCompatActivity(){
@@ -26,6 +25,9 @@ open class BaseActivity : AppCompatActivity(){
         val editor = sharedPreferences.edit()
         editor.putLong("loginNum", loginNum)
         editor.apply()
+    }
+    fun deletePref(){
+        sharedPreferences.edit().clear().commit()
     }
 
     fun getLoginNum(): Long {

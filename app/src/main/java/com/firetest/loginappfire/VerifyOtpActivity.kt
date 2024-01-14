@@ -14,10 +14,15 @@ import com.firetest.loginappfire.databinding.ActivityVerifyOtpBinding
 import com.google.android.gms.auth.api.phone.SmsRetriever
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.database.*
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.HashMap
+import kotlin.properties.Delegates
 
 class VerifyOtpActivity : BaseActivity() {
     lateinit var timer: TextView
@@ -26,9 +31,14 @@ class VerifyOtpActivity : BaseActivity() {
     lateinit var resend: TextView
     private lateinit var auth:FirebaseAuth
     lateinit var otp: TextView
+    var newuser by Delegates.notNull<Boolean>()
     lateinit var verify: TextView
     lateinit var credential: PhoneAuthCredential
     var Number_entered_by_user: String? = null
+    private lateinit var formattedMonth: String
+    private val firebaseDatabase = FirebaseDatabase.getInstance()
+    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    private val usersReference = firebaseDatabase.getReference("users")
     lateinit var smsBroadcastReceiver: SmsBroadcastReceiver
     private lateinit var binding: ActivityVerifyOtpBinding
 
@@ -44,6 +54,12 @@ class VerifyOtpActivity : BaseActivity() {
         val mobile = intent.getStringExtra("mobile")
         Number_entered_by_user = mobile.toString()
         binding.mobileNumberText.text = mobile
+
+        val calendar: Calendar = Calendar.getInstance()
+        calendar.get(Calendar.MONTH) + 1
+        val sdf = SimpleDateFormat("MM", Locale.getDefault())
+        formattedMonth = sdf.format(calendar.time)
+
 
         verify.setOnClickListener {
             try {
@@ -89,7 +105,7 @@ class VerifyOtpActivity : BaseActivity() {
     private fun send_code_to_user(number_entered_by_user: String) {
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
             number_entered_by_user,
-            60,
+            0,
             TimeUnit.SECONDS,
             this,
             mCallback
@@ -105,8 +121,8 @@ class VerifyOtpActivity : BaseActivity() {
             }
 
             override fun onVerificationCompleted(phoneAuthCredential: PhoneAuthCredential) {
-                val code = phoneAuthCredential.smsCode
-                code?.let { finish_everything(it) }
+//                val code = phoneAuthCredential.smsCode
+//                code?.let { finish_everything(it) }
             }
 
             override fun onVerificationFailed(e: FirebaseException) {
@@ -126,45 +142,13 @@ class VerifyOtpActivity : BaseActivity() {
         ) { task ->
 
             if (task.isSuccessful) {
-                val newuser = task.result!!.additionalUserInfo!!
+                newuser = task.result!!.additionalUserInfo!!
                     .isNewUser
-                if (newuser) {
-                    val log = getLoginNum()
-                    saveLoginNum(log+1)
-                }else{
-                    myRef = FirebaseAuth.getInstance().uid?.let {
-                        FirebaseDatabase.getInstance().reference.child(
-                            it
-                        ).child("loginNum")
-                    }!!
-                    // Read from the database
-                    myRef.addValueEventListener(object: ValueEventListener {
-
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            // This method is called once with the initial value and again
-                            // whenever data at this location is updated.
-                            val value = snapshot.value
-                            if (value is Long) {
-                                saveLoginNum(value+1)
-                            }
-                            Log.d("TAG", "Value is: " + value)
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-                            Log.w("TAG", "Failed to read value.", error.toException())
-                        }
-
-                    })
-
+                val user: FirebaseUser? = auth.currentUser
+                user?.uid?.let { uid ->
+                    // Check if the user node exists
+                    checkUserNode(uid)
                 }
-
-                val intent =
-                    Intent(this@VerifyOtpActivity, MainActivity::class.java)
-                intent.putExtra("login","true")
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                hideProgressDialog()
-                finish()
 
             } else {
                 Toast.makeText(this@VerifyOtpActivity, task.exception!!.message, Toast.LENGTH_SHORT)
@@ -234,6 +218,93 @@ class VerifyOtpActivity : BaseActivity() {
         const val TAG = "SMS_USER_CONSENT"
 
         const val REQ_USER_CONSENT = 100
+    }
+
+    private fun checkUserNode(uid: String) {
+        val userNodeReference: DatabaseReference = usersReference.child(uid)
+
+        userNodeReference.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) {
+                    // User node doesn't exist, create the structure
+                    createUserNodeStructure(userNodeReference)
+                }else{
+                    finalCall()
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle database error
+            }
+        })
+    }
+
+    private fun createUserNodeStructure(userNodeReference: DatabaseReference) {
+
+        val initialLogins: MutableMap<String, Any> = HashMap()
+        for (month in 1..12) {
+            // Initialize each month with 0 logins
+            initialLogins[month.toString().padStart(2, '0')] = 0
+        }
+
+        val userStructure: MutableMap<String, Any> = HashMap()
+        userStructure["logins"] = initialLogins
+
+        // Set the initial structure in the database
+        userNodeReference.child(currentYear.toString()).setValue(userStructure)
+
+        finalCall()
+    }
+
+    private fun finalCall() {
+        Log.d("TAG", "final called")
+        if (newuser) {
+            Log.d("TAG", "final called new")
+            val log = getLoginNum()
+            saveLoginNum(log+1)
+
+            val intent =
+                Intent(this@VerifyOtpActivity, MainActivity::class.java)
+            intent.putExtra("login","true")
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            hideProgressDialog()
+            finish()
+        }else{
+            Log.d("TAG", "final called reg")
+            myRef = usersReference.child(FirebaseAuth.getInstance().uid!!).child(currentYear.toString()).child("logins").child(formattedMonth)
+
+
+            // Read from the database
+            myRef.addListenerForSingleValueEvent(object: ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    // This method is called once with the initial value and again
+                    // whenever data at this location is updated.
+                    val value = snapshot.value
+                    if (value is Long) {
+                        saveLoginNum(value+1)
+                    }
+                    Log.d("TAG", "Value is: " + value)
+                    val intent =
+                        Intent(this@VerifyOtpActivity, MainActivity::class.java)
+                    intent.putExtra("login","true")
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    hideProgressDialog()
+                    finish()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.w("TAG", "Failed to read value.", error.toException())
+                }
+
+            })
+
+        }
+
+
+
     }
 
 }

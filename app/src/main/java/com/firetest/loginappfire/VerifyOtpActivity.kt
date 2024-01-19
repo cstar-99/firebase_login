@@ -214,11 +214,7 @@ class VerifyOtpActivity : BaseActivity() {
         return Regex("(\\d{6})").find(message)?.value ?: ""
     }
 
-    companion object {
-        const val TAG = "SMS_USER_CONSENT"
 
-        const val REQ_USER_CONSENT = 100
-    }
 
     private fun checkUserNode(uid: String) {
         val userNodeReference: DatabaseReference = usersReference.child(uid)
@@ -274,7 +270,6 @@ class VerifyOtpActivity : BaseActivity() {
             Log.d("TAG", "final called reg")
             myRef = usersReference.child(FirebaseAuth.getInstance().uid!!).child(currentYear.toString()).child("logins").child(formattedMonth)
 
-
             // Read from the database
             myRef.addListenerForSingleValueEvent(object: ValueEventListener {
 
@@ -298,13 +293,13 @@ class VerifyOtpActivity : BaseActivity() {
                 override fun onCancelled(error: DatabaseError) {
                     Log.w("TAG", "Failed to read value.", error.toException())
                 }
-
             })
-
         }
+    }
+    companion object {
+        const val TAG = "SMS_USER_CONSENT"
 
-
-
+        const val REQ_USER_CONSENT = 100
     }
 
 }

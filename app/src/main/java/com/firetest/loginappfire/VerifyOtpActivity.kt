@@ -26,14 +26,10 @@ import kotlin.collections.HashMap
 import kotlin.properties.Delegates
 
 class VerifyOtpActivity : BaseActivity() {
-    lateinit var timer: TextView
     private lateinit var myRef: DatabaseReference
     lateinit var code_by_system: String
-    lateinit var resend: TextView
     private lateinit var auth:FirebaseAuth
-    lateinit var otp: TextView
     var newuser by Delegates.notNull<Boolean>()
-    lateinit var verify: TextView
     lateinit var credential: PhoneAuthCredential
     var Number_entered_by_user: String? = null
     private lateinit var formattedMonth: String
@@ -48,31 +44,30 @@ class VerifyOtpActivity : BaseActivity() {
         binding = ActivityVerifyOtpBinding.inflate(layoutInflater)
         setContentView(binding.root)
         auth = FirebaseAuth.getInstance()
-        otp = findViewById(R.id.pinview)
-        timer = findViewById(R.id.timertext)
-        verify = findViewById(R.id.btn_verifyotp)
-        resend = findViewById(R.id.resendotp_verifyotp)
+
         val mobile = intent.getStringExtra("mobile")
         Number_entered_by_user = mobile.toString()
-        binding.mobileNumberText.text = mobile
 
         val calendar: Calendar = Calendar.getInstance()
         calendar.get(Calendar.MONTH) + 1
         val sdf = SimpleDateFormat("MM", Locale.getDefault())
         formattedMonth = sdf.format(calendar.time)
 
-
-        verify.setOnClickListener {
-            try {
-                check_code()
-            }catch (e: Exception){
-                showErrorSnackBar("please wait")
+        binding.apply {
+            mobileNumberText.text = mobile
+            btnVerifyotp.setOnClickListener {
+                try {
+                    check_code()
+                }catch (e: Exception){
+                    showErrorSnackBar("please wait")
+                }
+            }
+            resendotpVerifyotp.setOnClickListener {
+                resend_otp(Number_entered_by_user!!)
+                counttimer()
             }
         }
-        resend.setOnClickListener {
-            resend_otp(Number_entered_by_user!!)
-            counttimer()
-        }
+
         send_code_to_user(Number_entered_by_user!!)
 
     }
@@ -81,12 +76,12 @@ class VerifyOtpActivity : BaseActivity() {
         object : CountDownTimer(70000, 1000) {
             @SuppressLint("SetTextI18n")
             override fun onTick(millisUntilFinished: Long) {
-                timer.text = resources.getString(R.string.resend_code) +" "+millisUntilFinished / 1000 + "sec"
+                binding.timertext.text = resources.getString(R.string.resend_code) +" "+millisUntilFinished / 1000 + "sec"
             }
 
             override fun onFinish() {
-                timer.visibility = View.GONE
-                resend.visibility = View.VISIBLE
+                binding.timertext.visibility = View.GONE
+                binding.resendotpVerifyotp.visibility = View.VISIBLE
             }
         }.start()
     }
@@ -95,7 +90,7 @@ class VerifyOtpActivity : BaseActivity() {
     }
 
     private fun check_code() {
-        val user_entered_otp = otp.text.toString()
+        val user_entered_otp = binding.pinview.text.toString()
         if (user_entered_otp.isEmpty() || user_entered_otp.length < 6) {
             showErrorSnackBar("wrong OTP")
             return
@@ -132,7 +127,7 @@ class VerifyOtpActivity : BaseActivity() {
         }
 
     private fun finish_everything(code: String) {
-        otp.setText(code)
+        binding.pinview.setText(code)
         credential = PhoneAuthProvider.getCredential(code_by_system, code)
         sign_in(credential)
     }
@@ -176,7 +171,7 @@ class VerifyOtpActivity : BaseActivity() {
                     val message = data.getStringExtra(SmsRetriever.EXTRA_SMS_MESSAGE)
                     val code = message?.let { fetchVerificationCode(it) }
 
-                    otp.setText(code)
+                    binding.pinview.setText(code)
                 }
             }
         }

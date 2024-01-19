@@ -53,7 +53,7 @@ class MainActivity : BaseActivity() {
                 }
 
                 updateBarChart(binding.barChart, months, loginCounts)
-                //binding.mainText.text = value.toString()
+
                 Log.d("TAG", "Value received: ")
             }
 

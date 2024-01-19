@@ -31,15 +31,26 @@ class LoginActivity : BaseActivity() {
             startActivity(intent)
             finish()
         }
-        ccm = binding.ccp.selectedCountryCodeWithPlus
-        binding.loginBtn.setOnClickListener {
-            if(binding.etMobileNum.text!!.isNotEmpty()){
-                sendotp(binding.etMobileNum)
-            }else{
-                showErrorSnackBar("Please enter correct mobile number")
-            }
+        binding.apply {
+            ccm = ccp.selectedCountryCodeWithPlus
+            loginBtn.setOnClickListener {
+                if(binding.etMobileNum.text!!.isNotEmpty()){
+                    sendotp(binding.etMobileNum)
+                }else{
+                    showErrorSnackBar("Please enter correct mobile number")
+                }
 
+            }
         }
+//        ccm = binding.ccp.selectedCountryCodeWithPlus
+//        binding.loginBtn.setOnClickListener {
+//            if(binding.etMobileNum.text!!.isNotEmpty()){
+//                sendotp(binding.etMobileNum)
+//            }else{
+//                showErrorSnackBar("Please enter correct mobile number")
+//            }
+//
+//        }
 
     }
     fun sendotp(mobile_no: EditText) {

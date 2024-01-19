@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 
-open class BaseActivity : AppCompatActivity(){
+abstract class BaseActivity : AppCompatActivity(){
     private lateinit var mProgressDialog: Dialog
     private val sharedPreferences: SharedPreferences by lazy {
         getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
@@ -45,12 +45,7 @@ open class BaseActivity : AppCompatActivity(){
     fun hideProgressDialog() {
         mProgressDialog.dismiss()
     }
-    fun getCurrentUserId(): String {
-        return FirebaseAuth.getInstance().currentUser!!.uid
-    }
-    fun getCurrentUserName(): String? {
-        return FirebaseAuth.getInstance().currentUser!!.displayName
-    }
+
 
     fun showErrorSnackBar(message: String) {
         val snackBar = Snackbar.make(
